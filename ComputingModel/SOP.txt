@@ -1,0 +1,75 @@
+﻿--- IF ---
+
+IF <CONDITION> // Condition is 0 or 1
+SET 100
+ENDIF
+SET 101
+
+Transformed:
+SET <CONDITION>
+CPY B
+SET 1
+CMP B
+JMP <JUMPTO>
+SET 100
+SET 101 // JUMPTO
+
+
+--- VARIABLE ---
+
+VA = 100
+
+Transformed:
+SET <STACKPTR> // STACKPTR is known memory location containing current stack pointer
+LOD B // B contains stackpointer
+SET 100
+CPY C // C contains 100
+SET 0 // Offset for VA
+ADD B // Memory location of VA
+STR C // now VA = 100
+
+
+--- FUNCTION ---
+
+FUNCTION MINUS ARG1
+CPY B
+SET -1
+MLT B
+RETURN // RETURNS A
+ENDFUNCTION
+SET 100 // Some instruction
+MINUS 29
+SET 101
+
+Transformed:
+JMP <START>
+SET <STACKPTR> // FUNCDEF // STACKPTR is known memory location containing current stack pointer
+LOD B // B contains stackpointer
+SET 3 // Offset for ARG1
+ADD B // Memory location of ARG1
+LOD A
+CPY B // Function body
+SET -1
+MLT B // Function body end
+CPY B
+SET <STACKPTR>
+STR B
+JMP <RESUME>
+SET 100 // START
+SET <STACKPTR>
+LOD B
+SET <STACKLEN> // STACKLEN is known memory location containing current stack length
+ADD B
+CPY B
+SET <STACKPTR>
+STR B // Update STACKPTR
+// Similarly update current stack ptr and len as parent for the new stack frame
+SET 29
+CPY B
+SET <STACKPTR>
+LOD C
+SET 3
+ADD C
+STR B // Set value for ARG1
+JMP <FUNCDEF>
+SET 101 // RESUME
